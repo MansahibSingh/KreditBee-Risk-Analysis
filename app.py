@@ -3,6 +3,7 @@ import pandas as pd
 import smtplib
 from email.mime.text import MIMEText
 import requests
+import re
 
 # ---------------------------
 # Page Config
@@ -11,16 +12,23 @@ st.set_page_config(page_title="Loan Risk AI Tool", layout="wide")
 st.title("🤖 Loan Risk AI Analyzer")
 
 # ---------------------------
-# Upload File
+# Input Fields (Required)
 # ---------------------------
-uploaded_file = st.file_uploader("Upload Loan Dataset (Excel)", type=["xlsx"])
+uploaded_file = st.file_uploader("Upload Loan Dataset (Excel) *", type=["xlsx"])
 
-question = st.text_input("Ask your question about the dataset")
+question = st.text_input("Ask your question about the dataset *")
 
-email = st.text_input("Enter your email")
+email = st.text_input("Enter your email *")
 
 # ---------------------------
-# Email Function (Using Streamlit Secrets)
+# Email Validation
+# ---------------------------
+def is_valid_email(email):
+    pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+    return re.match(pattern, email)
+
+# ---------------------------
+# Email Function
 # ---------------------------
 def send_email(to_email, body):
     try:
@@ -37,7 +45,7 @@ def send_email(to_email, body):
             server.send_message(msg)
 
     except Exception as e:
-        st.error(f"Email Error: {e}")
+        st.error(f"❌ Email Error: {e}")
 
 # ---------------------------
 # AI Function (OpenRouter)
@@ -47,7 +55,6 @@ def generate_ai_response(df, question):
     try:
         api_key = st.secrets["OPENROUTER_API_KEY"]
 
-        # Create smart summary (instead of sending full dataset)
         total_loans = len(df)
         bad_loans = len(df[df["loan_condition"] == "Bad Loan"])
         bad_pct = (bad_loans / total_loans) * 100 if total_loans else 0
@@ -57,8 +64,8 @@ def generate_ai_response(df, question):
         high_dti = len(df[df["debt_to_income"] > 0.35])
         high_dti_pct = (high_dti / total_loans) * 100 if total_loans else 0
 
-        grade_risk = df.groupby("grade")["risk_flag"].mean().to_dict()
-        region_risk = df.groupby("region")["risk_flag"].mean().to_dict()
+        grade_risk = df.groupby("grade")["risk_flag"].mean().round(3).to_dict()
+        region_risk = df.groupby("region")["risk_flag"].mean().round(3).to_dict()
 
         summary = f"""
         Total Loans: {total_loans}
@@ -80,12 +87,12 @@ def generate_ai_response(df, question):
         {question}
 
         Tasks:
-        1. Answer the question clearly
-        2. Highlight key risk patterns
-        3. Mention any concerning trends
+        1. Answer clearly
+        2. Highlight risk patterns
+        3. Identify concerning trends
         4. Suggest business actions
 
-        Keep it concise, professional, and easy to understand.
+        Keep response concise and professional.
         """
 
         response = requests.post(
@@ -105,42 +112,77 @@ def generate_ai_response(df, question):
         result = response.json()
 
         if "choices" not in result:
-            return "❌ AI Error: Check API key or model configuration."
+            return "❌ AI Error: Check API key or model."
 
         return result["choices"][0]["message"]["content"]
 
     except Exception as e:
-        return f"❌ Error generating AI response: {e}"
+        return f"❌ AI Error: {e}"
 
 # ---------------------------
-# Main Button
+# Validation Logic
 # ---------------------------
-if st.button("Analyze & Send Email"):
+is_valid = (
+    uploaded_file is not None and
+    question.strip() != "" and
+    email.strip() != "" and
+    is_valid_email(email)
+)
 
-    if uploaded_file and question and email:
+# ---------------------------
+# Button (Disabled until valid)
+# ---------------------------
+analyze_clicked = st.button(
+    "Analyze & Send Email",
+    disabled=not is_valid
+)
 
-        try:
-            df = pd.read_excel(uploaded_file)
+# ---------------------------
+# Inline Warnings (Better UX)
+# ---------------------------
+if not uploaded_file:
+    st.info("📂 Please upload an Excel file")
 
-            # Basic validation (important)
-            required_cols = ["loan_condition", "interest_rate", "debt_to_income", "grade", "region", "risk_flag"]
-            missing_cols = [col for col in required_cols if col not in df.columns]
+if not question:
+    st.info("❓ Please enter a question")
 
-            if missing_cols:
-                st.error(f"Missing required columns: {missing_cols}")
-            else:
-                with st.spinner("Analyzing data with AI..."):
-                    result = generate_ai_response(df, question)
+if email and not is_valid_email(email):
+    st.warning("⚠️ Enter a valid email address")
 
-                send_email(email, result)
+if not email:
+    st.info("📧 Please enter your email")
 
-                st.success("✅ Analysis complete! Email sent successfully.")
+# ---------------------------
+# Main Execution
+# ---------------------------
+if analyze_clicked:
 
-                st.subheader("📊 AI Response Preview")
-                st.write(result)
+    try:
+        df = pd.read_excel(uploaded_file)
 
-        except Exception as e:
-            st.error(f"Error processing file: {e}")
+        required_cols = [
+            "loan_condition",
+            "interest_rate",
+            "debt_to_income",
+            "grade",
+            "region",
+            "risk_flag"
+        ]
 
-    else:
-        st.warning("Please upload file, enter question, and email.")
+        missing_cols = [col for col in required_cols if col not in df.columns]
+
+        if missing_cols:
+            st.error(f"❌ Missing required columns: {missing_cols}")
+        else:
+            with st.spinner("🤖 Analyzing data with AI..."):
+                result = generate_ai_response(df, question)
+
+            send_email(email, result)
+
+            st.success("✅ Analysis complete! Email sent successfully.")
+
+            st.subheader("📊 AI Response Preview")
+            st.write(result)
+
+    except Exception as e:
+        st.error(f"❌ Error processing file: {e}")
