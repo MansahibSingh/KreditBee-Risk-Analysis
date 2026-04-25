@@ -1,0 +1,141 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e019d554-3fcb-4635-b588-1ad633d70ecd",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    \"Total_Active_Loans\": 70000,\n    \"Percentage_Bad_Loans\": \"12.8%\",\n    \"High_Risk_Grades_DEF\": \"18.4%\",\n    \"Avg_Interest_Rate_High_Risk\": \"21.5%\",\n    \"Region_Default_Trends\": \"Highest defaults observed in Leinster and Munster regions.\"\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "d437adda-f389-4bec-8b8e-9b9d44e13e21",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "llama-3.3-70b-versatile",
+          "mode": "list",
+          "cachedResultName": "LLAMA-3.3-70B-VERSATILE"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are the Financial Risk Analyst. Based on the following loan portfolio metrics, write a short, professional email summarizing the risk exposure, highlighting concerning trends, and explaining the patterns in simple language for the executive team.\n\nData:\nTotal Loans: {{$json.Total_Active_Loans}}\nBad Loans: {{$json.Percentage_Bad_Loans}}\nHigh Risk Exposure: {{$json.High_Risk_Grades_DEF}}\nRegion Trends: {{$json.Region_Default_Trends}}\n\nInstructions:\n- Keep the tone formal and concise.\n- Clearly explain risk exposure and trends in simple business language.\n- Highlight any concerning insights.\n- Where appropriate, infer possible drivers based on the data.\n\n\"Please format your entire response in HTML. Use <br><br> for paragraph breaks, <b> for bold text, and <ul><li> for bullet points. Do not use Markdown or asterisks.\"\n\n\"Always end the email exactly like this: <br><br>Best regards,<br>Chief Risk Officer\""
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "store": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "70a2cb58-08d3-4f5e-9049-6ebb9f6cbdb4",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "sJBsimiUuaibPF6L",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "mansahib.sinngh@gmail.com",
+        "subject": "Portfolio Risk Report",
+        "message": "={{ $json.output[0].content[0].text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        768,
+        0
+      ],
+      "id": "79ee93be-9e8c-433a-ba46-cd4224b9b4c6",
+      "name": "Send a message",
+      "webhookId": "70302e21-4d24-403f-b2d2-01ad530acd42",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "sLGRXwJA6Cpc71x8",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ea8a777e-0f6b-4f56-bb14-5eea51313473",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "148ae3eff9a0a7189177e683b067dc52baee0040ca92928e77067e0282387270"
+  },
+  "id": "jjQJVmzFExHnWegn",
+  "tags": []
+}

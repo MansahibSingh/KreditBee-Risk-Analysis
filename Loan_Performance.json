@@ -1,0 +1,140 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "0f8ca8ca-f43f-4ff2-87a9-91e9628a52f6",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "6e221085-74ab-4f7d-9b7b-e9d80b764bf2",
+      "name": "Webhook",
+      "webhookId": "0f8ca8ca-f43f-4ff2-87a9-91e9628a52f6"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    \"Loan_Reference\": \"L-9942\",\n    \"Risk_Grade\": \"E\",\n    \"Interest_Rate_Percent\": \"21.5%\",\n    \"DTI_Ratio\": \"42%\",\n    \"Annual_Income_Bracket\": \"Low (0-50k)\",\n    \"Work_Experience\": \"1 year\",\n    \"Loan_Purpose\": \"Debt Consolidation\",\n    \"Loan_Status\": \"Defaulted\"\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "51644a77-cb4e-45e2-b915-787cd1478cb5",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "llama-3.3-70b-versatile",
+          "mode": "list",
+          "cachedResultName": "LLAMA-3.3-70B-VERSATILE"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are a Risk Analysis AI. A user has asked: \"Why is this loan classified as a Bad Loan?\"​Review the borrower's profile below and provide a short, human-readable explanation of the risk factors. Compare these factors to what a \"Good Loan\" typically looks like.​Loan Profile: Grade: {{$json.Grade}} Interest Rate: {{$json.Interest_Rate}} DTI: {{$json.Debt_to_Income_Ratio}} Income: {{$json.Income_Category}} Employment: {{$json.Employment_Length}}​\"Please format your entire response in HTML. Use <br><br> for paragraph breaks, <b> for bold text, and <ul><li> for bullet points. Do not use Markdown or asterisks.\""
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "store": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "809e466d-236a-47fe-81d5-07db3bef43e8",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "sJBsimiUuaibPF6L",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "mansahib.sinngh@gmail.com",
+        "subject": "Risk Analysis Report",
+        "message": "={{ $json.output[0].content[0].text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        768,
+        0
+      ],
+      "id": "12c5fb6e-c956-407f-84d3-832dd1105ecc",
+      "name": "Send a message",
+      "webhookId": "00a176c0-b32a-4346-b6c7-b2551c82c313",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "sLGRXwJA6Cpc71x8",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a5c41c08-5d0a-41a4-89c5-bcf51f30529e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "148ae3eff9a0a7189177e683b067dc52baee0040ca92928e77067e0282387270"
+  },
+  "id": "vSDBuu7yDT7SawJe",
+  "tags": []
+}
