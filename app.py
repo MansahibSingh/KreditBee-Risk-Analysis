@@ -62,8 +62,11 @@ if not email:
 if analyze_clicked:
 
     try:
-        # Read Excel
+        # Read Excel file
         df = pd.read_excel(uploaded_file)
+
+        # 🔥 FIX: Convert all data to string (handles Timestamp issue)
+        df = df.astype(str)
 
         # Convert dataframe to JSON
         data_json = df.to_dict(orient="records")
@@ -74,7 +77,7 @@ if analyze_clicked:
             "email": email
         }
 
-        # 🔴 IMPORTANT: Replace with your n8n webhook URL later
+        # 🔴 Replace with your actual n8n webhook URL later
         webhook_url = "https://your-n8n-url/webhook/loan-analysis"
 
         with st.spinner("🚀 Sending data for analysis..."):
@@ -83,7 +86,7 @@ if analyze_clicked:
         if response.status_code == 200:
             st.success("✅ Request sent successfully! You will receive an email shortly.")
         else:
-            st.error("❌ Failed to connect to automation workflow.")
+            st.error(f"❌ Failed to connect to automation. Status: {response.status_code}")
 
     except Exception as e:
         st.error(f"❌ Error processing file: {e}")
