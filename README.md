@@ -17,5 +17,5 @@ This repository contains an end-to-end automation solution for financial risk an
  * **Accuracy:** Using the **LLaMA 3.3 70B** model ensures that the risk analysis remains contextually aware of financial nuances like DTI (Debt-to-Income) impact.
  * **Efficiency:** Automated 100% of the manual report-writing process for the risk department.
 
-**Project developed by:** Allan Alex\
+**Project developed by:** Mansahib Singh\
 **Final Submission Date:** June 22, 2026
