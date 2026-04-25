@@ -10,7 +10,7 @@ st.set_page_config(page_title="Loan Risk AI Tool", layout="wide")
 st.title("🤖 Loan Risk AI Analyzer")
 
 # ---------------------------
-# Input Fields
+# Inputs
 # ---------------------------
 uploaded_file = st.file_uploader("Upload Loan Dataset (Excel) *", type=["xlsx"])
 question = st.text_input("Ask your question *")
@@ -24,7 +24,7 @@ def is_valid_email(email):
     return re.match(pattern, email)
 
 # ---------------------------
-# Validation Check
+# Validation
 # ---------------------------
 is_valid = (
     uploaded_file is not None and
@@ -36,57 +36,31 @@ is_valid = (
 # ---------------------------
 # Button
 # ---------------------------
-analyze_clicked = st.button(
-    "Analyze & Send Email",
-    disabled=not is_valid
-)
-
-# ---------------------------
-# User Guidance
-# ---------------------------
-if not uploaded_file:
-    st.info("📂 Please upload an Excel file")
-
-if not question:
-    st.info("❓ Please enter a question")
-
-if email and not is_valid_email(email):
-    st.warning("⚠️ Enter a valid email address")
-
-if not email:
-    st.info("📧 Please enter your email")
-
-# ---------------------------
-# Main Logic
-# ---------------------------
-if analyze_clicked:
+if st.button("Analyze & Send Email", disabled=not is_valid):
 
     try:
-        # Read Excel file
+        # Read file
         df = pd.read_excel(uploaded_file)
 
-        # 🔥 FIX: Convert all data to string (handles Timestamp issue)
+        # Fix JSON issue (Timestamp etc.)
         df = df.astype(str)
 
-        # Convert dataframe to JSON
-        data_json = df.to_dict(orient="records")
-
         payload = {
-            "data": data_json,
+            "data": df.to_dict(orient="records"),
             "question": question,
             "email": email
         }
 
-        # 🔴 Replace with your actual n8n webhook URL later
-        webhook_url = "https://your-n8n-url/webhook/loan-analysis"
+        # 🔐 Get webhook from secrets
+        webhook_url = st.secrets["N8N_WEBHOOK_URL"]
 
-        with st.spinner("🚀 Sending data for analysis..."):
+        with st.spinner("🚀 Sending data for processing..."):
             response = requests.post(webhook_url, json=payload)
 
         if response.status_code == 200:
-            st.success("✅ Request sent successfully! You will receive an email shortly.")
+            st.success("✅ Request sent! You will receive an email shortly.")
         else:
-            st.error(f"❌ Failed to connect to automation. Status: {response.status_code}")
+            st.error(f"❌ Failed to connect (Status: {response.status_code})")
 
     except Exception as e:
-        st.error(f"❌ Error processing file: {e}")
+        st.error(f"❌ Error: {e}")
